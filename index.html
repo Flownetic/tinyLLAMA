@@ -5,47 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TinyLLaMA Chatbot</title>
     <style>
-        :root {
-            --primary: #4f46e5;
-            --secondary: #f9fafb;
-            --text: #111827;
-        }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f3f4f6;
-            color: var(--text);
+            background-color: #f5f5f5;
         }
         #chat-container {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             overflow: hidden;
         }
         #chat-header {
-            background: var(--primary);
+            background: #4f46e5;
             color: white;
-            padding: 16px;
-            font-size: 1.2rem;
-            font-weight: 600;
+            padding: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
         }
         #chatbox {
             height: 500px;
-            padding: 16px;
+            padding: 15px;
             overflow-y: auto;
-            background: var(--secondary);
+            background: #f9fafb;
         }
         .message {
             margin-bottom: 12px;
             max-width: 80%;
-            padding: 10px 16px;
+            padding: 10px 15px;
             border-radius: 18px;
             line-height: 1.4;
         }
         .user-message {
-            background: var(--primary);
+            background: #4f46e5;
             color: white;
             margin-left: auto;
             border-bottom-right-radius: 4px;
@@ -58,59 +52,44 @@
         }
         #input-area {
             display: flex;
-            padding: 16px;
+            padding: 15px;
             background: white;
-            border-top: 1px solid #e5e7eb;
+            border-top: 1px solid #eee;
         }
         #userInput {
-            flex-grow: 1;
-            padding: 12px 16px;
-            border: 1px solid #d1d5db;
-            border-radius: 24px;
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
             outline: none;
-            font-size: 1rem;
-        }
-        #userInput:focus {
-            border-color: var(--primary);
         }
         #sendButton {
-            background: var(--primary);
+            background: #4f46e5;
             color: white;
             border: none;
-            border-radius: 24px;
-            padding: 0 24px;
-            margin-left: 12px;
+            border-radius: 20px;
+            padding: 10px 20px;
+            margin-left: 10px;
             cursor: pointer;
-            font-weight: 600;
-            transition: background 0.2s;
         }
-        #sendButton:hover {
-            background: #4338ca;
-        }
-        .typing-indicator {
+        .typing {
             display: inline-block;
-            padding: 10px 16px;
-            background: white;
-            border-radius: 18px;
+            padding: 10px 15px;
         }
         .typing-dot {
             display: inline-block;
             width: 8px;
             height: 8px;
+            background: #999;
             border-radius: 50%;
-            background: #9ca3af;
             margin: 0 2px;
-            animation: typing 1.4s infinite both;
+            animation: typing 1s infinite;
         }
-        .typing-dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-        .typing-dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
         @keyframes typing {
-            0%, 60%, 100% { transform: translateY(0); }
-            30% { transform: translateY(-5px); }
+            0%, 100% { opacity: 0.3; transform: translateY(0); }
+            50% { opacity: 1; transform: translateY(-3px); }
         }
     </style>
 </head>
@@ -127,24 +106,27 @@
     </div>
 
     <script>
+        // DOM elements
         const chatbox = document.getElementById('chatbox');
         const userInput = document.getElementById('userInput');
         const sendButton = document.getElementById('sendButton');
         
-        // Replace with your Gradio URL (from Colab output)
-        const API_URL = "YOUR_GRADIO_URL/run/predict";
+        // Get your Gradio URL from Colab output (replace this)
+        const GRADIO_URL = "YOUR_GRADIO_URL_HERE"; // Should look like: https://xxxxxx.gradio.live
         
-        function addMessage(sender, message) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}-message`;
-            messageDiv.innerHTML = message;
-            chatbox.appendChild(messageDiv);
+        // Add message to chat
+        function addMessage(sender, content) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${sender}-message`;
+            msgDiv.innerHTML = content;
+            chatbox.appendChild(msgDiv);
             chatbox.scrollTop = chatbox.scrollHeight;
         }
         
-        function showTypingIndicator() {
+        // Show typing indicator
+        function showTyping() {
             const typingDiv = document.createElement('div');
-            typingDiv.className = 'message bot-message typing-indicator';
+            typingDiv.className = 'message bot-message typing';
             typingDiv.id = 'typingIndicator';
             typingDiv.innerHTML = `
                 <span class="typing-dot"></span>
@@ -155,43 +137,49 @@
             chatbox.scrollTop = chatbox.scrollHeight;
         }
         
-        function hideTypingIndicator() {
-            const typingIndicator = document.getElementById('typingIndicator');
-            if (typingIndicator) {
-                typingIndicator.remove();
-            }
+        // Hide typing indicator
+        function hideTyping() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) indicator.remove();
         }
         
+        // Send message to backend
         async function sendMessage() {
             const message = userInput.value.trim();
             if (!message) return;
             
             addMessage('user', message);
             userInput.value = '';
-            showTypingIndicator();
+            showTyping();
             
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                const response = await fetch(GRADIO_URL + "/run/predict", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        data: [
-                            message,
-                            []  // Empty history for simplicity
-                        ]
+                        "data": [message, []]
                     })
                 });
                 
+                if (!response.ok) throw new Error("Network error");
+                
                 const data = await response.json();
-                hideTypingIndicator();
+                hideTyping();
                 addMessage('bot', data.data[0]);
             } catch (error) {
-                hideTypingIndicator();
-                addMessage('bot', "Sorry, I'm having trouble connecting. Please try again.");
-                console.error('Error:', error);
+                hideTyping();
+                addMessage('bot', `
+                    Connection failed. Please check:<br>
+                    1. Colab is running<br>
+                    2. URL is correct<br>
+                    3. No browser restrictions<br>
+                    <small>Error: ${error.message}</small>
+                `);
+                console.error("Error:", error);
             }
         }
         
+        // Event listeners
         sendButton.addEventListener('click', sendMessage);
         userInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendMessage();
