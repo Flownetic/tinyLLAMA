@@ -1,189 +1,922 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TinyLLaMA Chatbot</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        #chat-container {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        #chat-header {
-            background: #4f46e5;
-            color: white;
-            padding: 15px;
-            font-size: 1.2em;
-            font-weight: bold;
-        }
-        #chatbox {
-            height: 500px;
-            padding: 15px;
-            overflow-y: auto;
-            background: #f9fafb;
-        }
-        .message {
-            margin-bottom: 12px;
-            max-width: 80%;
-            padding: 10px 15px;
-            border-radius: 18px;
-            line-height: 1.4;
-        }
-        .user-message {
-            background: #4f46e5;
-            color: white;
-            margin-left: auto;
-            border-bottom-right-radius: 4px;
-        }
-        .bot-message {
-            background: white;
-            border: 1px solid #e5e7eb;
-            margin-right: auto;
-            border-bottom-left-radius: 4px;
-        }
-        #input-area {
-            display: flex;
-            padding: 15px;
-            background: white;
-            border-top: 1px solid #eee;
-        }
-        #userInput {
-            flex: 1;
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-            outline: none;
-        }
-        #sendButton {
-            background: #4f46e5;
-            color: white;
-            border: none;
-            border-radius: 20px;
-            padding: 10px 20px;
-            margin-left: 10px;
-            cursor: pointer;
-        }
-        .typing {
-            display: inline-block;
-            padding: 10px 15px;
-        }
-        .typing-dot {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background: #999;
-            border-radius: 50%;
-            margin: 0 2px;
-            animation: typing 1s infinite;
-        }
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes typing {
-            0%, 100% { opacity: 0.3; transform: translateY(0); }
-            50% { opacity: 1; transform: translateY(-3px); }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Daisuke v1.3 - Multi-API Chatbot</title>
+  <style>
+    /* Global Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      background-color: #121212;
+      color: #e0e0e0;
+      line-height: 1.6;
+    }
+    
+    /* Navigation */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 5%;
+      background-color: #000000;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 2px solid #00ff88;
+    }
+    
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #00ff88;
+      text-decoration: none;
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+    }
+    
+    .nav-links a {
+      color: #e0e0e0;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: all 0.3s;
+      padding: 0.5rem 0.8rem;
+      border-radius: 4px;
+    }
+    
+    .nav-links a:hover {
+      color: #00ff88;
+      background-color: rgba(0, 255, 136, 0.1);
+    }
+    
+    /* Main Container */
+    .container {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+    
+    /* Chatbot Header */
+    .chat-header {
+      text-align: center;
+      padding: 1.5rem;
+      background-color: #000;
+      color: #00ff88;
+      font-size: 2rem;
+      font-weight: bold;
+      border-bottom: 2px solid #00ff88;
+      border-radius: 8px 8px 0 0;
+    }
+    
+    /* API Selector */
+    .api-selector {
+      background-color: #1a1a1a;
+      padding: 1rem;
+      border-left: 1px solid #333;
+      border-right: 1px solid #333;
+    }
+    
+    .api-selector select {
+      width: 100%;
+      padding: 0.8rem;
+      background-color: #121212;
+      border: 1px solid #333;
+      color: #e0e0e0;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+    
+    .api-selector select:focus {
+      outline: none;
+      border-color: #00ff88;
+    }
+    
+    .api-description {
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: #aaa;
+    }
+    
+    /* Chat Box */
+    .chat-box {
+      padding: 1.5rem;
+      height: 500px;
+      overflow-y: auto;
+      background-color: #1e1e1e;
+      border-left: 1px solid #333;
+      border-right: 1px solid #333;
+    }
+    
+    .user-msg, .bot-msg-group {
+      margin: 0.8rem 0;
+      max-width: 80%;
+      border-radius: 8px;
+      padding: 0.8rem 1rem;
+      line-height: 1.5;
+    }
+    
+    .user-msg {
+      background-color: #004d26;
+      align-self: flex-end;
+      margin-left: auto;
+      border: 1px solid #007a3d;
+    }
+    
+    .bot-msg-group {
+      background-color: #262626;
+      align-self: flex-start;
+      border-left: 3px solid #00ff88;
+    }
+    
+    .bot-msg-group p {
+      margin: 0.5rem 0;
+    }
+    
+    /* Input Area */
+    .input-area {
+      display: flex;
+      background-color: #1e1e1e;
+      padding: 1rem;
+      border-radius: 0 0 8px 8px;
+      border-left: 1px solid #333;
+      border-right: 1px solid #333;
+      border-bottom: 1px solid #333;
+    }
+    
+    #user-input {
+      flex: 1;
+      padding: 0.8rem 1rem;
+      background-color: #121212;
+      border: 1px solid #333;
+      color: #e0e0e0;
+      border-radius: 5px 0 0 5px;
+      font-size: 1rem;
+    }
+    
+    #user-input:focus {
+      outline: none;
+      border-color: #00ff88;
+    }
+    
+    #send-btn {
+      background-color: #00ff88;
+      border: none;
+      padding: 0 1.5rem;
+      cursor: pointer;
+      color: #000;
+      font-weight: bold;
+      font-size: 1rem;
+      border-radius: 0 5px 5px 0;
+      transition: all 0.3s;
+    }
+    
+    #send-btn:hover {
+      background-color: #00cc6a;
+    }
+    
+    /* Loading Screen */
+    .loading-screen {
+      position: fixed;
+      background-color: #000;
+      color: #00ff88;
+      font-size: 1.5rem;
+      font-weight: bold;
+      top: 0; 
+      left: 0; 
+      right: 0; 
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    
+    /* Typing Animation */
+    .typing-dots span {
+      display: inline-block;
+      font-size: 1.5rem;
+      animation: blink 1s infinite;
+    }
+    
+    .typing-dots span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    
+    .typing-dots span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    
+    @keyframes blink {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 1; }
+    }
+    
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      background-color: #000000;
+      margin-top: 3rem;
+      border-top: 2px solid #00ff88;
+    }
+    
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 1rem;
+    }
+    
+    .footer-links a {
+      color: #e0e0e0;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    
+    .footer-links a:hover {
+      color: #00ff88;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .container {
+        padding: 0 1rem;
+      }
+      
+      .nav-links {
+        gap: 0.8rem;
+      }
+      
+      .nav-links a {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.6rem;
+      }
+      
+      .chat-box {
+        height: 400px;
+        padding: 1rem;
+      }
+      
+      .user-msg, .bot-msg-group {
+        max-width: 90%;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      nav {
+        flex-direction: column;
+        padding: 1rem;
+      }
+      
+      .logo {
+        margin-bottom: 0.8rem;
+      }
+      
+      .nav-links {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div id="chat-container">
-        <div id="chat-header">
-            TinyLLaMA Chatbot (1.1B)
-        </div>
-        <div id="chatbox"></div>
-        <div id="input-area">
-            <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off">
-            <button id="sendButton">Send</button>
-        </div>
+  <nav>
+    <a href="https://flownetic.github.io/Flovvnetic/" class="logo">Daisuke AI</a>
+    <div class="nav-links">
+      <a href="https://flownetic.github.io/Flovvnetic/">Home</a>
+      <a href="https://flownetic.github.io/flovvnetic_services/">Services</a>
+      <a href="https://flownetic.github.io/flovvnetic_about/">About</a>
+      <a href="https://flownetic.github.io/flovvnetic_contact/">Contact</a>
+      <a href="https://flownetic.github.io/Flovvnetic_chatbot/">Wikibot</a>
     </div>
+  </nav>
 
-    <script>
-        // DOM elements
-        const chatbox = document.getElementById('chatbox');
-        const userInput = document.getElementById('userInput');
-        const sendButton = document.getElementById('sendButton');
-        
-        // Get your Gradio URL from Colab output (replace this)
-        const GRADIO_URL = "https://3db3f18f2a86aee9f0.gradio.live"; // Should look like: https://xxxxxx.gradio.live
-        
-        // Add message to chat
-        function addMessage(sender, content) {
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `message ${sender}-message`;
-            msgDiv.innerHTML = content;
-            chatbox.appendChild(msgDiv);
-            chatbox.scrollTop = chatbox.scrollHeight;
-        }
-        
-        // Show typing indicator
-        function showTyping() {
-            const typingDiv = document.createElement('div');
-            typingDiv.className = 'message bot-message typing';
-            typingDiv.id = 'typingIndicator';
-            typingDiv.innerHTML = `
-                <span class="typing-dot"></span>
-                <span class="typing-dot"></span>
-                <span class="typing-dot"></span>
-            `;
-            chatbox.appendChild(typingDiv);
-            chatbox.scrollTop = chatbox.scrollHeight;
-        }
-        
-        // Hide typing indicator
-        function hideTyping() {
-            const indicator = document.getElementById('typingIndicator');
-            if (indicator) indicator.remove();
-        }
-        
-        // Send message to backend
-        async function sendMessage() {
-            const message = userInput.value.trim();
-            if (!message) return;
-            
-            addMessage('user', message);
-            userInput.value = '';
-            showTyping();
-            
-            try {
-                const response = await fetch(GRADIO_URL + "/run/predict", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        "data": [message, []]
-                    })
-                });
-                
-                if (!response.ok) throw new Error("Network error");
-                
-                const data = await response.json();
-                hideTyping();
-                addMessage('bot', data.data[0]);
-            } catch (error) {
-                hideTyping();
-                addMessage('bot', `
-                    Connection failed. Please check:<br>
-                    1. Colab is running<br>
-                    2. URL is correct<br>
-                    3. No browser restrictions<br>
-                    <small>Error: ${error.message}</small>
-                `);
-                console.error("Error:", error);
-            }
-        }
-        
-        // Event listeners
-        sendButton.addEventListener('click', sendMessage);
-        userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
+  <div class="loading-screen" id="loading-screen">
+    <div id="loading-message">Loading Daisuke AI...</div>
+  </div>
+
+  <div class="container">
+    <div class="chat-header">Daisuke AI Assistant v1.3</div>
+    <div class="api-selector">
+      <select id="api-select">
+        <option value="default">Select an API to answer your question</option>
+        <option value="wikipedia">Wikipedia API - Search Wikipedia articles</option>
+        <option value="duckduckgo">DuckDuckGo API - Get instant answers from DuckDuckGo</option>
+        <option value="openlibrary">Open Library API - Access book information</option>
+        <option value="jokeapi">JokeAPI - Get random jokes</option>
+        <option value="pokeapi">PokéAPI - Pokémon database</option>
+        <option value="openmeteo">Open-Meteo API - Weather forecasts</option>
+        <option value="newton">Newton API - Math calculations</option>
+        <option value="calculator">Calculator API - Advanced calculations</option>
+        <option value="nasa">NASA Open API - Space and astronomy data</option>
+        <option value="openscience">Open Science API - Scientific research data</option>
+        <option value="pubchem">PubChem API - Chemical compound database</option>
+        <option value="ensembl">Ensembl REST API - Genome data</option>
+        <option value="exoplanet">NASA Exoplanet API - Exoplanet archive</option>
+        <option value="earthquake">USGS Earthquake API - Earthquake data</option>
+        <option value="dictionary">Free Dictionary API - Dictionary and thesaurus</option>
+        <option value="poetry">Poetry DB - Poetry database</option>
+        <option value="quoteable">Quoteable - Famous quotes</option>
+        <option value="gutenberg">Gutenberg Project API - Free eBooks</option>
+        <option value="opentrivia">Open Trivia - Trivia questions</option>
+      </select>
+      <div class="api-description" id="api-description">
+        Select an API from the dropdown to specify where your question should be answered from.
+      </div>
+    </div>
+    <div class="chat-box" id="chat-box">
+      <div class="bot-msg-group">
+        <p>Hello! I'm Daisuke, your AI assistant with multiple API integrations.</p>
+        <p>Please select an API from the dropdown above to specify where your question should be answered from.</p>
+      </div>
+    </div>
+    <div class="input-area">
+      <input type="text" id="user-input" placeholder="Type your message here..." autocomplete="off">
+      <button id="send-btn">Send</button>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-links">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+      <a href="#">Contact Us</a>
+    </div>
+    <p>&copy; 2025 Daisuke AI. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // WebAssembly module for C++ calculations
+    const wasmModule = new WebAssembly.Module(new Uint8Array([
+      0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, // WASM magic number and version
+      // ... (actual WASM binary would go here)
+    ]));
+    
+    const wasmInstance = new WebAssembly.Instance(wasmModule, {});
+    
+    const chatBox = document.getElementById('chat-box');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const loadingScreen = document.getElementById('loading-screen');
+    const loadingMessage = document.getElementById('loading-message');
+    const apiSelect = document.getElementById('api-select');
+    const apiDescription = document.getElementById('api-description');
+
+    const questionWords = ['what', 'how', 'who', 'why', 'when', 'where', 'which', 'whom', 'whose'];
+    const helpingVerbs = ['is', 'am', 'are', 'was', 'were', 'do', 'does', 'did', 'have', 'has', 'had', 'will', 'would', 'shall', 'should', 'can', 'could', 'may', 'might', 'must'];
+    const pronouns = ['i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them', 'my', 'your', 'his', 'its', 'our', 'their'];
+
+    let basicData = {};
+    let selectedApi = 'default';
+
+    // API descriptions
+    const apiDescriptions = {
+      wikipedia: "Wikipedia API provides access to Wikipedia articles. Ask about any topic that might have a Wikipedia page.",
+      duckduckgo: "DuckDuckGo Instant Answer API provides concise answers to factual questions from various sources.",
+      openlibrary: "Open Library API provides information about books, authors, and publishing. Ask about books or authors.",
+      jokeapi: "JokeAPI provides random jokes. Just ask for a joke or specify a category (programming, pun, etc.).",
+      pokeapi: "PokéAPI provides comprehensive Pokémon data. Ask about Pokémon, their stats, abilities, or types.",
+      openmeteo: "Open-Meteo API provides weather forecasts. Ask about current weather or forecasts for specific locations.",
+      newton: "Newton API performs math operations. Ask to simplify, factor, derive, integrate, or solve equations.",
+      calculator: "Calculator API performs advanced calculations. Ask math questions or for specific calculations.",
+      nasa: "NASA Open API provides space and astronomy data. Ask about space missions, astronomy, or NASA projects.",
+      openscience: "Open Science API provides scientific research data. Ask about scientific studies or research papers.",
+      pubchem: "PubChem API provides chemical compound information. Ask about chemicals, compounds, or their properties.",
+      ensembl: "Ensembl REST API provides genome data. Ask about genes, genomes, or genetic information.",
+      exoplanet: "NASA Exoplanet Archive provides data on exoplanets. Ask about planets outside our solar system.",
+      earthquake: "USGS Earthquake API provides earthquake data. Ask about recent earthquakes or seismic activity.",
+      dictionary: "Free Dictionary API provides definitions, synonyms, and examples. Ask for word definitions or meanings.",
+      poetry: "Poetry DB provides poems and poet information. Ask for poems by title, author, or random selections.",
+      quoteable: "Quoteable provides famous quotes. Ask for quotes by author, topic, or random inspirational quotes.",
+      gutenberg: "Gutenberg Project API provides access to free eBooks. Ask about public domain books or authors.",
+      opentrivia: "Open Trivia provides trivia questions. Ask for trivia questions on various topics or categories."
+    };
+
+    apiSelect.addEventListener('change', (e) => {
+      selectedApi = e.target.value;
+      if (selectedApi === 'default') {
+        apiDescription.textContent = "Select an API from the dropdown to specify where your question should be answered from.";
+      } else {
+        apiDescription.textContent = apiDescriptions[selectedApi];
+      }
+    });
+
+    function cleanText(text) {
+      return text.toLowerCase().replace(/[^\w\s_]/g, '').split(/\s+/).filter(Boolean);
+    }
+
+    function removeQWords(text) {
+      const words = cleanText(text);
+      return words.filter(word =>
+        !questionWords.includes(word) &&
+        !pronouns.includes(word) &&
+        !helpingVerbs.includes(word)
+      ).join(' ');
+    }
+
+    function similarity(a, b) {
+      let matches = 0;
+      a = a.toLowerCase();
+      b = b.toLowerCase();
+      const len = Math.max(a.length, b.length);
+      for (let i = 0; i < len; i++) {
+        if (a[i] === b[i]) matches++;
+      }
+      return (matches / len) * 100;
+    }
+
+    async function fetchJSON(path) {
+      loadingMessage.textContent = `🔄 Loading: ${path}...`;
+      try {
+        const res = await fetch(path);
+        if (res.ok) return await res.json();
+      } catch (e) {}
+      return null;
+    }
+
+    function addMessage(text, type) {
+      const msg = document.createElement('div');
+      msg.className = type === 'user' ? 'user-msg' : 'bot-msg-group';
+      if (Array.isArray(text)) {
+        text.forEach(t => {
+          const p = document.createElement('p');
+          p.textContent = t;
+          msg.appendChild(p);
         });
-    </script>
+      } else {
+        const p = document.createElement('p');
+        p.textContent = text;
+        msg.appendChild(p);
+      }
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function addTypingIndicator() {
+      const msg = document.createElement('div');
+      msg.className = 'bot-msg-group';
+      msg.innerHTML = '<span class="typing-dots"><span>.</span><span>.</span><span>.</span></span>';
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return msg;
+    }
+
+    async function searchAnswer(query) {
+      if (selectedApi === 'default') {
+        return ["Please select an API from the dropdown menu above before asking your question."];
+      }
+
+      const typingMsg = addTypingIndicator();
+      let response;
+
+      try {
+        switch (selectedApi) {
+          case 'wikipedia':
+            response = await fetchWikipedia(query);
+            break;
+          case 'duckduckgo':
+            response = await fetchDuckDuckGo(query);
+            break;
+          case 'openlibrary':
+            response = await fetchOpenLibrary(query);
+            break;
+          case 'jokeapi':
+            response = await fetchJokeAPI();
+            break;
+          case 'pokeapi':
+            response = await fetchPokeAPI(query);
+            break;
+          case 'openmeteo':
+            response = await fetchOpenMeteo(query);
+            break;
+          case 'newton':
+            response = await fetchNewtonAPI(query);
+            break;
+          case 'calculator':
+            response = await calculateWithWasm(query);
+            break;
+          case 'nasa':
+            response = await fetchNasaAPI(query);
+            break;
+          case 'openscience':
+            response = await fetchOpenScience(query);
+            break;
+          case 'pubchem':
+            response = await fetchPubChem(query);
+            break;
+          case 'ensembl':
+            response = await fetchEnsembl(query);
+            break;
+          case 'exoplanet':
+            response = await fetchExoplanet(query);
+            break;
+          case 'earthquake':
+            response = await fetchEarthquake();
+            break;
+          case 'dictionary':
+            response = await fetchDictionary(query);
+            break;
+          case 'poetry':
+            response = await fetchPoetry(query);
+            break;
+          case 'quoteable':
+            response = await fetchQuoteable();
+            break;
+          case 'gutenberg':
+            response = await fetchGutenberg(query);
+            break;
+          case 'opentrivia':
+            response = await fetchOpenTrivia();
+            break;
+          default:
+            response = ["I'm not sure how to answer that with the selected API."];
+        }
+      } catch (error) {
+        console.error("API Error:", error);
+        response = ["Sorry, I encountered an error while trying to fetch the answer. Please try again later."];
+      }
+
+      typingMsg.remove();
+      return Array.isArray(response) ? response : [response];
+    }
+
+    // API-specific functions
+    async function fetchWikipedia(query) {
+      const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&list=search&srsearch=${encodeURIComponent(query)}&origin=*`;
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.query.search.length > 0) {
+        const pageId = data.query.search[0].pageid;
+        const extractUrl = `https://en.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exintro&explaintext&pageids=${pageId}&origin=*`;
+        const extractResponse = await fetch(extractUrl);
+        const extractData = await extractResponse.json();
+        
+        const page = extractData.query.pages[pageId];
+        return [
+          `Wikipedia: ${page.title}`,
+          page.extract.substring(0, 500) + (page.extract.length > 500 ? "..." : ""),
+          `Read more: https://en.wikipedia.org/?curid=${pageId}`
+        ];
+      }
+      return ["No Wikipedia article found for your query."];
+    }
+
+    async function fetchDuckDuckGo(query) {
+      const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.AbstractText) {
+        return [
+          `DuckDuckGo: ${data.Heading || query}`,
+          data.AbstractText,
+          data.AbstractURL ? `Source: ${data.AbstractURL}` : ""
+        ];
+      } else if (data.RelatedTopics && data.RelatedTopics.length > 0) {
+        const results = data.RelatedTopics.map(topic => topic.Text).filter(Boolean);
+        return ["DuckDuckGo results:", ...results.slice(0, 3)];
+      }
+      return ["DuckDuckGo couldn't find a direct answer to your question."];
+    }
+
+    async function fetchOpenLibrary(query) {
+      const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.docs && data.docs.length > 0) {
+        const book = data.docs[0];
+        return [
+          `Book: ${book.title}`,
+          `Author: ${book.author_name ? book.author_name.join(", ") : "Unknown"}`,
+          `First published: ${book.first_publish_year || "Unknown"}`,
+          `Subjects: ${book.subject ? book.subject.slice(0, 3).join(", ") : "None listed"}`,
+          `More info: https://openlibrary.org${book.key}`
+        ];
+      }
+      return ["No books found matching your query."];
+    }
+
+    async function fetchJokeAPI() {
+      const url = 'https://v2.jokeapi.dev/joke/Any?type=single';
+      const response = await fetch(url);
+      const data = await response.json();
+      return data.joke ? [data.joke] : ["Why did the joke fail to load? Because it wasn't funny enough!"];
+    }
+
+    async function fetchPokeAPI(query) {
+      const url = `https://pokeapi.co/api/v2/pokemon/${encodeURIComponent(query.toLowerCase())}`;
+      const response = await fetch(url);
+      
+      if (response.status === 404) {
+        return ["Pokémon not found. Please check the name and try again."];
+      }
+      
+      const data = await response.json();
+      return [
+        `Pokémon: ${data.name.charAt(0).toUpperCase() + data.name.slice(1)}`,
+        `ID: ${data.id}`,
+        `Type: ${data.types.map(t => t.type.name).join(", ")}`,
+        `Height: ${data.height / 10}m`,
+        `Weight: ${data.weight / 10}kg`,
+        `Abilities: ${data.abilities.map(a => a.ability.name).join(", ")}`
+      ];
+    }
+
+    async function fetchOpenMeteo(query) {
+      // This is a simplified version - in a real app you'd need geocoding first
+      const url = 'https://api.open-meteo.com/v1/forecast?latitude=51.5074&longitude=0.1278&current_weather=true';
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      return [
+        "Current weather (London as example):",
+        `Temperature: ${data.current_weather.temperature}°C`,
+        `Wind speed: ${data.current_weather.windspeed} km/h`,
+        `Wind direction: ${data.current_weather.winddirection}°`,
+        `Weather code: ${data.current_weather.weathercode}`
+      ];
+    }
+
+    async function fetchNewtonAPI(query) {
+      if (query.includes('integrate')) {
+        const expr = query.replace(/integrate/i, '').trim();
+        const url = `https://newton.now.sh/api/v2/integrate/${encodeURIComponent(expr)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        return [`Integral of ${expr}:`, data.result];
+      } else if (query.includes('derive') || query.includes('differentiate')) {
+        const expr = query.replace(/derive|differentiate/i, '').trim();
+        const url = `https://newton.now.sh/api/v2/derive/${encodeURIComponent(expr)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        return [`Derivative of ${expr}:`, data.result];
+      } else {
+        return ["Please specify a math operation like 'integrate x^2' or 'derive sin(x)'"];
+      }
+    }
+
+    function calculateWithWasm(query) {
+      try {
+        // This is a placeholder - in a real app you'd compile actual C++ math functions to WASM
+        const mathExpr = query.replace(/calculate|compute|what is/i, '').trim();
+        // Simulate WASM calculation
+        const result = eval(mathExpr); // Note: Using eval is dangerous in real apps
+        return [`Calculation: ${mathExpr} = ${result}`];
+      } catch (e) {
+        return ["Could not compute the expression. Please try a different math question."];
+      }
+    }
+
+    async function fetchNasaAPI(query) {
+      const url = 'https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY';
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      return [
+        "NASA Astronomy Picture of the Day:",
+        data.title,
+        data.explanation.substring(0, 300) + "...",
+        `HD URL: ${data.hdurl || data.url}`
+      ];
+    }
+
+    async function fetchOpenScience(query) {
+      const url = `https://api.openalex.org/works?search=${encodeURIComponent(query)}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.results && data.results.length > 0) {
+        const paper = data.results[0];
+        return [
+          `Research: ${paper.title}`,
+          `Authors: ${paper.authorships.map(a => a.author.display_name).join(", ")}`,
+          `Published: ${paper.publication_year}`,
+          `DOI: ${paper.doi}`,
+          `Cited by: ${paper.cited_by_count}`,
+          `Open Access: ${paper.open_access.is_oa ? "Yes" : "No"}`
+        ];
+      }
+      return ["No research papers found matching your query."];
+    }
+
+    async function fetchPubChem(query) {
+      const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(query)}/JSON`;
+      const response = await fetch(url);
+      
+      if (response.status === 404) {
+        return ["Chemical compound not found. Please check the name and try again."];
+      }
+      
+      const data = await response.json();
+      const cid = data.PC_Compounds[0].id.id.cid;
+      const propertiesUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/MolecularFormula,MolecularWeight,CanonicalSMILES/JSON`;
+      const propertiesResponse = await fetch(propertiesUrl);
+      const propertiesData = await propertiesResponse.json();
+      
+      const properties = propertiesData.PropertyTable.Properties[0];
+      return [
+        `Compound: ${query}`,
+        `Molecular Formula: ${properties.MolecularFormula}`,
+        `Molecular Weight: ${properties.MolecularWeight}`,
+        `SMILES: ${properties.CanonicalSMILES}`,
+        `More info: https://pubchem.ncbi.nlm.nih.gov/compound/${cid}`
+      ];
+    }
+
+    async function fetchEnsembl(query) {
+      const url = `https://rest.ensembl.org/lookup/symbol/homo_sapiens/${encodeURIComponent(query)}?content-type=application/json`;
+      const response = await fetch(url);
+      
+      if (response.status === 404) {
+        return ["Gene not found in Ensembl database. Please check the symbol and try again."];
+      }
+      
+      const data = await response.json();
+      return [
+        `Gene: ${data.display_name}`,
+        `Species: ${data.species}`,
+        `Chromosome: ${data.seq_region_name}`,
+        `Start: ${data.start}`,
+        `End: ${data.end}`,
+        `Strand: ${data.strand === 1 ? "+" : "-"}`,
+        `More info: https://www.ensembl.org/id/${data.id}`
+      ];
+    }
+
+    async function fetchExoplanet(query) {
+      const url = 'https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&format=json';
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (query.toLowerCase().includes('count') || query.toLowerCase().includes('how many')) {
+        return [`There are currently ${data.length} confirmed exoplanets in NASA's archive.`];
+      }
+      
+      const planet = data.find(p => p.pl_name.toLowerCase().includes(query.toLowerCase()));
+      if (planet) {
+        return [
+          `Exoplanet: ${planet.pl_name}`,
+          `Discovered in: ${planet.disc_year}`,
+          `Orbital period: ${planet.pl_orbper} days`,
+          `Mass: ${planet.pl_masse} Earth masses`,
+          `Radius: ${planet.pl_rade} Earth radii`,
+          `Host star: ${planet.hostname}`
+        ];
+      }
+      return ["Exoplanet not found. Try asking 'how many exoplanets are there?' or specify a known exoplanet name."];
+    }
+
+    async function fetchEarthquake() {
+      const url = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson';
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.features.length === 0) {
+        return ["No significant earthquakes in the past month."];
+      }
+      
+      const quake = data.features[0];
+      const props = quake.properties;
+      return [
+        `Latest significant earthquake:`,
+        `Magnitude: ${props.mag}`,
+        `Location: ${props.place}`,
+        `Time: ${new Date(props.time).toLocaleString()}`,
+        `Depth: ${quake.geometry.coordinates[2]} km`,
+        `More info: ${props.url}`
+      ];
+    }
+
+    async function fetchDictionary(query) {
+      const url = `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(query)}`;
+      const response = await fetch(url);
+      
+      if (response.status === 404) {
+        return ["Word not found in the dictionary. Please check your spelling."];
+      }
+      
+      const data = await response.json();
+      const entry = data[0];
+      const meanings = [];
+      
+      entry.meanings.forEach(meaning => {
+        meaning.definitions.slice(0, 2).forEach(def => {
+          meanings.push(`${meaning.partOfSpeech}: ${def.definition}`);
+        });
+      });
+      
+      return [
+        `Word: ${entry.word}`,
+        ...meanings,
+        entry.phonetic ? `Phonetic: ${entry.phonetic}` : ""
+      ];
+    }
+
+    async function fetchPoetry(query) {
+      if (query.toLowerCase().includes('random')) {
+        const url = 'https://poetrydb.org/random/1';
+        const response = await fetch(url);
+        const data = await response.json();
+        const poem = data[0];
+        return [
+          `Poem: ${poem.title}`,
+          `By: ${poem.author}`,
+          ...poem.lines.filter(line => line.trim() !== "")
+        ];
+      } else {
+        return ["Try asking for a 'random poem' or specify an author/title."];
+      }
+    }
+
+    async function fetchQuoteable() {
+      const url = 'https://api.quotable.io/random';
+      const response = await fetch(url);
+      const data = await response.json();
+      return [
+        `"${data.content}"`,
+        `— ${data.author}`
+      ];
+    }
+
+    async function fetchGutenberg(query) {
+      const url = `https://gutendex.com/books?search=${encodeURIComponent(query)}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.results.length === 0) {
+        return ["No books found matching your query."];
+      }
+      
+      const book = data.results[0];
+      return [
+        `Book: ${book.title}`,
+        `Author: ${book.authors.map(a => a.name).join(", ")}`,
+        `Subjects: ${book.subjects.slice(0, 3).join(", ")}`,
+        `Download: ${book.formats['text/plain; charset=utf-8'] || "Not available"}`
+      ];
+    }
+
+    async function fetchOpenTrivia() {
+      const url = 'https://opentdb.com/api.php?amount=1&type=multiple';
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.results.length === 0) {
+        return ["Could not fetch a trivia question at this time."];
+      }
+      
+      const question = data.results[0];
+      const answers = [...question.incorrect_answers, question.correct_answer];
+      
+      // Shuffle answers
+      for (let i = answers.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [answers[i], answers[j]] = [answers[j], answers[i]];
+      }
+      
+      return [
+        `Category: ${question.category}`,
+        `Difficulty: ${question.difficulty}`,
+        `Question: ${question.question}`,
+        `Possible answers:`,
+        ...answers.map((a, i) => `${i + 1}. ${a}`),
+        `(Answer is ${answers.indexOf(question.correct_answer) + 1})`
+      ];
+    }
+
+    async function handleSend() {
+      const input = userInput.value.trim();
+      if (!input) return;
+
+      addMessage(input, 'user');
+      userInput.value = '';
+      
+      const replies = await searchAnswer(input);
+      addMessage(replies, 'bot');
+    }
+
+    sendBtn.addEventListener('click', handleSend);
+    userInput.addEventListener('keypress', e => {
+      if (e.key === 'Enter') handleSend();
+    });
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      basicData = await fetchJSON('basic/basic.json');
+      loadingScreen.style.display = 'none';
+    });
+  </script>
 </body>
 </html>
